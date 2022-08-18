@@ -1,0 +1,8 @@
+/bin/
+/bin64/
+/packages/
+
+/src/vcpp/.vs/
+/src/vcpp/Debug/
+/src/vcpp/Debug64/
+*.vcxproj.user

@@ -6,6 +6,14 @@
 #include "SDL_syswm.h"
 #endif
 
+extern "C" 
+{
+    // request dedicated graphics card for Nvidia and AMD (eg. laptops with two graphics chipsets)
+    // https://stackoverflow.com/a/39047129
+    __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
+    __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+
 extern void cleargamma();
 
 void cleanup()

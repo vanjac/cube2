@@ -31,7 +31,7 @@ static float cursorx = 0.5f, cursory = 0.5f;
 
 VARP(guiautotab, 6, 16, 40);
 VARP(guiclicktab, 0, 0, 1);
-VARP(guifadein, 0, 1, 1);
+VARP(guifadetime, 0, 150, 300);
 VARP(guipreviewtime, 0, 15, 1000);
 
 static int lastpreview = 0;
@@ -950,7 +950,7 @@ struct gui : g3d_gui
             if(allowinput) hascursor = true;
         }
         basescale = initscale;
-        if(layoutpass) scale.x = scale.y = scale.z = guifadein ? basescale*min((totalmillis-starttime)/300.0f, 1.0f) : basescale;
+        if(layoutpass) scale.x = scale.y = scale.z = guifadetime ? basescale*min((float)(totalmillis-starttime)/guifadetime, 1.0f) : basescale;
         alpha = allowinput ? 0.80f : 0.60f;
         passthrough = scale.x<basescale || !allowinput;
         curdepth = -1;

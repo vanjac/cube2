@@ -1557,28 +1557,16 @@ void phystest()
 
 COMMAND(phystest, "");
 
+void vecfromyawpitch(float yaw, float pitch, int move, int strafe, int vertical, vec &m)
+{
+    m.x = move*-sinf(RAD*yaw)*cosf(RAD*pitch) + vertical*-sinf(RAD*pitch)*-sinf(RAD*yaw) + strafe*cosf(RAD*yaw);
+    m.y = move* cosf(RAD*yaw)*cosf(RAD*pitch) + vertical*-sinf(RAD*pitch)* cosf(RAD*yaw) + strafe*sinf(RAD*yaw);
+    m.z = move*               sinf(RAD*pitch) + vertical* cosf(RAD*pitch);
+}
+
 void vecfromyawpitch(float yaw, float pitch, int move, int strafe, vec &m)
 {
-    if(move)
-    {
-        m.x = move*-sinf(RAD*yaw);
-        m.y = move*cosf(RAD*yaw);
-    }
-    else m.x = m.y = 0;
-
-    if(pitch)
-    {
-        m.x *= cosf(RAD*pitch);
-        m.y *= cosf(RAD*pitch);
-        m.z = move*sinf(RAD*pitch);
-    }
-    else m.z = 0;
-
-    if(strafe)
-    {
-        m.x += strafe*cosf(RAD*yaw);
-        m.y += strafe*sinf(RAD*yaw);
-    }
+    vecfromyawpitch(yaw, pitch, move, strafe, 0, m);
 }
 
 void vectoyawpitch(const vec &v, float &yaw, float &pitch)
@@ -1625,9 +1613,9 @@ void modifyvelocity(physent *pl, bool local, bool water, bool floating, int curt
     if(!floating && pl->physstate == PHYS_FALL) pl->timeinair = min(pl->timeinair + curtime, 1000);
 
     vec m(0.0f, 0.0f, 0.0f);
-    if((pl->move || pl->strafe) && allowmove)
+    if((pl->move || pl->strafe || pl->vertical) && allowmove)
     {
-        vecfromyawpitch(pl->yaw, floating || water || pl->type==ENT_CAMERA ? pl->pitch : 0, pl->move, pl->strafe, m);
+        vecfromyawpitch(pl->yaw, floating || water || pl->type==ENT_CAMERA ? pl->pitch : 0, pl->move, pl->strafe, pl->vertical, m);
 
         if(!floating && pl->physstate >= PHYS_SLOPE)
         {
@@ -1698,7 +1686,7 @@ bool moveplayer(physent *pl, int moveres, bool local, int curtime)
     float secs = curtime/1000.f;
 
     // apply gravity
-    if(!floating) modifygravity(pl, water, curtime);
+    if(!floating) { pl->vertical = 0; modifygravity(pl, water, curtime); }
     // apply any player generated changes in velocity
     modifyvelocity(pl, local, water, floating, curtime);
 
@@ -2023,10 +2011,12 @@ bool moveplatform(physent *p, const vec &dir)
 
 #define dir(name,v,d,s,os) ICOMMAND(name, "D", (int *down), { player->s = *down!=0; player->v = player->s ? d : (player->os ? -(d) : 0); });
 
-dir(backward, move,   -1, k_down,  k_up);
-dir(forward,  move,    1, k_up,    k_down);
-dir(left,     strafe,  1, k_left,  k_right);
-dir(right,    strafe, -1, k_right, k_left);
+dir(forward,  move,      1, k_forward,  k_backward);
+dir(backward, move,     -1, k_backward, k_forward);
+dir(left,     strafe,    1, k_left,     k_right);
+dir(right,    strafe,   -1, k_right,    k_left);
+dir(up,       vertical,  1, k_up,       k_down);
+dir(down,     vertical, -1, k_down,     k_up);
 
 ICOMMAND(jump,   "D", (int *down), { if(!*down || game::canjump()) player->jumping = *down!=0; });
 ICOMMAND(attack, "D", (int *down), { game::doattack(*down!=0); });

@@ -78,7 +78,7 @@ struct physent                                  // base entity type, can be affe
     ushort timeinair;
     uchar inwater;
     bool jumping;
-    schar move, strafe;
+    schar move, strafe, vertical;
 
     uchar physstate;                            // one of PHYS_* above
     uchar state, editstate;                     // one of CS_* above
@@ -105,7 +105,7 @@ struct physent                                  // base entity type, can be affe
         inwater = 0;
         timeinair = 0;
         jumping = false;
-        strafe = move = 0;
+        strafe = move = vertical = 0;
         physstate = PHYS_FALL;
         vel = falling = vec(0, 0, 0);
         floor = vec(0, 0, 1);
@@ -196,7 +196,7 @@ struct ragdolldata;
 
 struct dynent : physent                         // animated characters, or characters that can receive input
 {
-    bool k_left, k_right, k_up, k_down;         // see input code
+    bool k_left, k_right, k_forward, k_backward, k_up, k_down;  // see input code
 
     entitylight light;
     animinterpinfo animinterp[MAXANIMPARTS];
@@ -217,13 +217,13 @@ struct dynent : physent                         // animated characters, or chara
         if(ragdoll) cleanragdoll(this);
 #endif
     }
-               
+
     void stopmoving()
     {
-        k_left = k_right = k_up = k_down = jumping = false;
-        move = strafe = 0;
+        k_left = k_right = k_forward = k_backward = k_up = k_down = jumping = false;
+        move = strafe = vertical = 0;
     }
-        
+
     void reset()
     {
         physent::reset();

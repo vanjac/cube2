@@ -260,6 +260,8 @@ float raycube(const vec &o, const vec &ray, float radius, int mode, int size, ex
     CHECKINSIDEWORLD;
 
     int closest = -1, x = int(v.x), y = int(v.y), z = int(v.z);
+    bool leftSolid = !(mode&RAY_SELECT);
+    ushort insideMat = 0;
     for(;;)
     {
         DOWNOCTREE(disttoent, if(mode&RAY_SHADOW));
@@ -267,9 +269,18 @@ float raycube(const vec &o, const vec &ray, float radius, int mode, int size, ex
         int lsize = 1<<lshift;
 
         cube &c = *lc;
-        if((dist>0 || !(mode&RAY_SKIPFIRST)) &&
+        if (mode&RAY_SELECT)
+        {
+            if (!leftSolid)
+                leftSolid = !isentirelysolid(c);
+            if (dist <= 0)
+                insideMat = c.material;
+            else if (c.material != insideMat)
+                insideMat = 0;
+        }
+        if((dist>0 || !(mode&RAY_SKIPFIRST)) && leftSolid &&
            (((mode&RAY_CLIPMAT) && isclipped(c.material&MATF_VOLUME)) ||
-            ((mode&RAY_EDITMAT) && c.material != MAT_AIR) ||
+            ((mode&RAY_EDITMAT) && c.material != MAT_AIR && !insideMat) ||
             (!(mode&RAY_PASS) && lsize==size && !isempty(c)) ||
             isentirelysolid(c) ||
             dent < dist))
@@ -280,7 +291,7 @@ float raycube(const vec &o, const vec &ray, float radius, int mode, int size, ex
 
         ivec lo(x&(~0U<<lshift), y&(~0U<<lshift), z&(~0U<<lshift));
 
-        if(!isempty(c))
+        if(!isempty(c) && leftSolid)
         {
             const clipplanes &p = getclipplanes(c, lo, lsize, false, 1);
             float f = 0;

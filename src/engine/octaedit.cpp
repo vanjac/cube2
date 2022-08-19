@@ -394,7 +394,7 @@ void rendereditcursor()
         wdist = rayent(player->o, camdir, 1e16f,
                        (editmode && showmat ? RAY_EDITMAT : 0)   // select cubes first
                        | (!dragging && entediting && (!passthrough || !passthroughent) ? RAY_ENTS : 0)
-                       | RAY_SKIPFIRST
+                       | RAY_SKIPFIRST | RAY_SELECT
                        | (passthroughcube || passthrough ? RAY_PASS : 0), gridsize, entorient, ent);
 
         if((havesel || dragging) && !passthroughsel && !hmapedit)     // now try selecting the selection

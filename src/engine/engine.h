@@ -440,6 +440,8 @@ extern bool initwarning(const char *desc, int level = INIT_RESET, int type = CHA
 
 extern bool grabinput, minimized;
 
+void inputgrab(bool on);
+
 extern bool interceptkey(int sym);
 
 extern float loadprogress;

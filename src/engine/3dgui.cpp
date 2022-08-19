@@ -1259,20 +1259,10 @@ void g3d_cursorpos(float &x, float &y)
     else x = y = 0.5f;
 }
 
-void g3d_resetcursor()
+void g3d_setcursor(int x, int y)
 {
-    cursorx = cursory = 0.5f;
-}
-
-FVARP(guisens, 1e-3f, 1, 1e3f);
-
-bool g3d_movecursor(int dx, int dy)
-{
-    if(!guis2d.length() || !hascursor) return false;
-    const float CURSORSCALE = 500.0f;
-    cursorx = max(0.0f, min(1.0f, cursorx+guisens*dx*(screenh/(screenw*CURSORSCALE))));
-    cursory = max(0.0f, min(1.0f, cursory+guisens*dy/CURSORSCALE));
-    return true;
+    cursorx = max(0.0f, min(1.0f, (float)x/screenw));
+    cursory = max(0.0f, min(1.0f, (float)y/screenh));
 }
 
 VARNP(guifollow, useguifollow, 0, 1, 1);
@@ -1357,6 +1347,9 @@ void g3d_render()
 
         glDisable(GL_BLEND);
     }
+
+    if (hascursor == grabinput)
+        inputgrab(!hascursor);
 }
 
 void g3d_render2d()

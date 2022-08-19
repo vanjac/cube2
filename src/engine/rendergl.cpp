@@ -2122,6 +2122,8 @@ void writecrosshairs(stream *f)
 
 void drawcrosshair(int w, int h)
 {
+    if (!grabinput)
+        return;
     bool windowhit = g3d_windowhit(true, false);
     if(!windowhit && (hidehud || mainmenu)) return; //(hidehud || player->state==CS_SPECTATOR || player->state==CS_DEAD)) return;
 

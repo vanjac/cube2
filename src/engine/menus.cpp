@@ -147,7 +147,6 @@ void pushgui(menu *m, int pos = -1)
     if(guistack.empty())
     {
         menupos = menuinfrontofplayer();
-        g3d_resetcursor();
     }
     if(pos < 0) guistack.add(m);
     else guistack.insert(pos, m);

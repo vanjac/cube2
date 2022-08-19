@@ -472,13 +472,13 @@ VARN(relativemouse, userelativemouse, 1, 1, 0);
 VARNP(relativemouse, userelativemouse, 0, 1, 1);
 #endif
 
-bool shouldgrab = false, grabinput = false, minimized = false, canrelativemouse = true, relativemouse = false;
+bool grabinput = false, minimized = false, canrelativemouse = true, relativemouse = false;
 
 #ifdef SDL_VIDEO_DRIVER_X11
 VAR(sdl_xgrab_bug, 0, 0, 1);
 #endif
 
-void inputgrab(bool on, bool delay = false)
+void inputgrab(bool on)
 {
 #ifdef SDL_VIDEO_DRIVER_X11
     bool wasrelativemouse = relativemouse;
@@ -510,8 +510,10 @@ void inputgrab(bool on, bool delay = false)
             SDL_SetRelativeMouseMode(SDL_FALSE);
             relativemouse = false;
         }
+        if (grabinput) // previously grabbed
+            SDL_WarpMouseInWindow(screen, screenw / 2, screenh / 2);
     }
-    shouldgrab = delay;
+    grabinput = on;
 
 #ifdef SDL_VIDEO_DRIVER_X11
     if((relativemouse || wasrelativemouse) && sdl_xgrab_bug)
@@ -922,12 +924,9 @@ void checkinput()
     if(interceptkeysym) clearinterceptkey();
     //int lasttype = 0, lastbut = 0;
     bool mousemoved = false;
-    int focused = 0;
     while(pumpevents(events))
     {
         SDL_Event &event = events.remove();
-
-        if(focused && event.type!=SDL_WINDOWEVENT) { if(grabinput != (focused>0)) inputgrab(grabinput = focused>0, shouldgrab); focused = 0; }
 
         switch(event.type)
         {
@@ -955,20 +954,6 @@ void checkinput()
                 {
                     case SDL_WINDOWEVENT_CLOSE:
                         quit();
-                        break;
-
-                    case SDL_WINDOWEVENT_FOCUS_GAINED:
-                        shouldgrab = true;
-                        break;
-                    case SDL_WINDOWEVENT_ENTER:
-                        shouldgrab = false;
-                        focused = 1;
-                        break;
-
-                    case SDL_WINDOWEVENT_LEAVE:
-                    case SDL_WINDOWEVENT_FOCUS_LOST:
-                        shouldgrab = false;
-                        focused = -1;
                         break;
 
                     case SDL_WINDOWEVENT_MINIMIZED:
@@ -1002,10 +987,10 @@ void checkinput()
                 {
                     int dx = event.motion.xrel, dy = event.motion.yrel;
                     checkmousemotion(dx, dy);
-                    if(!g3d_movecursor(dx, dy)) mousemove(dx, dy);
+                    mousemove(dx, dy);
                     mousemoved = true;
                 }
-                else if(shouldgrab) inputgrab(grabinput = true);
+                g3d_setcursor(event.motion.x, event.motion.y);
                 break;
 
             case SDL_MOUSEBUTTONDOWN:
@@ -1029,7 +1014,6 @@ void checkinput()
                 break;
         }
     }
-    if(focused) { if(grabinput != (focused>0)) inputgrab(grabinput = focused>0, shouldgrab); focused = 0; }
     if(mousemoved) resetmousemotion();
 }
 
@@ -1272,7 +1256,6 @@ int main(int argc, char **argv)
     SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
     #endif
     setupscreen();
-    SDL_ShowCursor(SDL_FALSE);
     SDL_StopTextInput(); // workaround for spurious text-input events getting sent on first text input toggle?
 
     logoutf("init: gl");
@@ -1349,7 +1332,7 @@ int main(int argc, char **argv)
     initmumble();
     resetfpshistory();
 
-    inputgrab(grabinput = true);
+    inputgrab(false);
     ignoremousemotion();
 
     for(;;)

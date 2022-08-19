@@ -136,6 +136,22 @@ VAR(passthroughsel, 0, 0, 1);
 VAR(editing, 1, 0, 0);
 VAR(selectcorners, 0, 0, 1);
 VARF(hmapedit, 0, 0, 1, horient = sel.orient);
+int buildmatID = -1;
+ICOMMAND(buildmat, "s", (char *name),
+{
+    if(!name[0])
+        buildmatID = -1;
+    else
+    {
+        buildmatID = findmaterial(name);
+        if(buildmatID < 0) conoutf(CON_ERROR, "unknown material \"%s\"", name);
+        else
+        {
+            if(isclipped(buildmatID&MATF_VOLUME)) buildmatID |= MAT_CLIP;
+            if(isdeadly(buildmatID&MATF_VOLUME)) buildmatID |= MAT_DEATH;
+        }
+    }
+});
 
 void forcenextundo() { lastsel.orient = -1; }
 
@@ -145,6 +161,7 @@ void cubecancel()
 {
     havesel = false;
     moving = dragging = hmapedit = passthroughsel = 0;
+    buildmatID = -1;
     forcenextundo();
     hmapcancel();
 }
@@ -1956,8 +1973,11 @@ static ushort getmaterial(cube &c)
 
 VAR(invalidcubeguard, 0, 1, 1);
 
+void setmat(cube &c, ushort mat, ushort matmask, ushort filtermat, ushort filtermask, int filtergeom);
+
 void mpeditface(int dir, int mode, selinfo &sel, bool local)
 {
+    if(mode==1 && buildmatID >= 0 && nompedit && multiplayer()) return; // not implemented yet
     if(mode==1 && (sel.cx || sel.cy || sel.cxs&1 || sel.cys&1)) mode = 0;
     int d = dimension(sel.orient);
     int dc = dimcoord(sel.orient);
@@ -1983,7 +2003,12 @@ void mpeditface(int dir, int mode, selinfo &sel, bool local)
         c.material = mat;
         if(mode==1) // fill command
         {
-            if(dir<0)
+            if (buildmatID >= 0)
+            {
+                emptyfaces(c);
+                setmat(c, buildmatID, 0, 0, 0, 0);
+            }
+            else if(dir<0)
             {
                 solidfaces(c);
                 cube &o = blockcube(x, y, 1, sel, -sel.grid);
